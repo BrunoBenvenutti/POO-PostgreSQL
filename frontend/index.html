@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <!-- parte do JS do Bootstrap -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+        <script>
+            function cadastra(){
+                // recupera os dados do formulário
+                var paciente = new Object()
+                paciente.nome = document.getElementById("nome").value
+                paciente.idade = Number(document.getElementById("idade").value)
+                paciente.altura = Number(document.getElementById("altura").value)
+                let id = document.getElementById("id").value
+
+                // vamos consumir a API feita em Java Spring Boot
+                let requisicao = new XMLHttpRequest()
+                if (id == ""){ // cadastra
+                    requisicao.open('POST', 'http://localhost:8080/paciente', true)
+                }
+                else  { // atualiza
+                    paciente.id = Number(id)
+                    requisicao.open('PUT', 'http://localhost:8080/paciente', true)
+                }
+                
+                requisicao.onload = function(){
+                    if ((requisicao.status >= 200) && (requisicao.status < 400)){
+                        console.log(`Conectou com sucesso`)
+                    }
+                    else {
+                        console.log(`Problema na conexão`)
+                    }
+                }
+                requisicao.setRequestHeader('Content-Type', 'application/json')
+                requisicao.send(JSON.stringify(paciente))
+                alert(`Paciente foi cadastrado com sucesso`)
+            }
+            function consulta(){
+                var requisicao = new XMLHttpRequest()
+                requisicao.open('GET', 'http://localhost:8080/paciente', true) // true = assíncrono
+                requisicao.onload = function() {
+                    let pacientes = JSON.parse(this.response)
+                    let saida = "" // variável acumuladora das linhas da tabela
+                    // vamos percorrer o array de pacientes
+                    pacientes.forEach(paciente => {
+                        // para cada paciente
+                        saida = saida + `<tr> <td> ${paciente.nome} </td> <td> ${paciente.idade} </td> <td> ${paciente.altura} </td> <td> <img onclick="remove(${paciente.id})" src='remove.png' width='60px' height='40px'> </td> <td> <img onclick="atualiza(${paciente.id}, '${paciente.nome}', ${paciente.idade}, ${paciente.altura})" src='update.png' width='60px' height='40px'> </td> </tr>`
+                    })
+                   // coloca o conteúdo de saída em conteudoTabela
+                    document.getElementById("conteudoTabela").innerHTML = saida
+                    conteudoTabela = saida // 
+                }
+                requisicao.send()
+            }
+            
+            function remove(id){
+                let req = new XMLHttpRequest() // objeto de conexão com a API
+                //abrir conexão  assíncrona
+                req.open('DELETE', `http://localhost:8080/paciente/${id}`, true)
+                req.send() // efetivamente remove
+                alert(`Paciente removido com sucesso`)
+                // atualiza a lista de pacientes
+                consulta()
+            }
+
+            function atualiza(id, nome, idade, altura){
+                // JOGAR OS DADOS PARA O FORMULÁRIO
+                document.getElementById("nome").value = nome
+                document.getElementById("altura").value = altura
+                document.getElementById("idade").value = idade
+                document.getElementById("id").value = id // o usuário não verá
+            }
+        </script>
+        <style>
+        </style>
+    </head>
+    <body onload="consulta()">
+        <header>
+            <!-- barra de navegação com classes CSS do bootstrap-->
+            <div class="container">
+                <nav class="navbar navbar-expand-lg navbar-light bg-primary">
+                    <a class="navbar-brand" href="index.html">
+                        <img src="saude.png" width="120" height="80">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#conteudoMenu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="conteudoMenu">    
+                        <ul class="navbar-nav mr-auto"> <!-- lista de itens do menu -->
+                            <li class="nav-item"> <!-- item da lista -->
+                                <a class="nav-link text-white" href="index.html"> Home </a>
+                            </li>
+                            <li class="nav-item"> <!-- item da lista -->
+                                <a class="nav-link text-white" href="paciente.html"> Paciente </a>
+                            </li>
+                            <li class="nav-item"> <!-- item da lista -->
+                                <a class="nav-link text-white" href="medico.html"> Médico </a>
+                            </li>
+                            <li class="nav-item"> <!-- item da lista -->
+                                <a class="nav-link text-white" href="sobre.html"> Sobre </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </header>
+        <section>
+            <div id="cadastro" class="container">
+                <h3> Preencha os dados para cadastro de um paciente </h3>
+                <form>
+                    <input id="id" hidden /> <!-- o usuário não verá este input -->
+                    <div class="mb-3">
+                        <label class="form-label" for="nome"> Nome </label>
+                        <input type="text" class="form-control" id="nome">
+                    </div>
+                    <div>
+                        <div class="mb-3">
+                            <label class="form-label" for="idade"> Idade </label>
+                            <input type="text" class="form-control" id="idade">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mb-3">
+                            <label class="form-label" for="altura"> Altura </label>
+                            <input type="text" class="form-control" id="altura">
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-success" onClick="cadastra(), consulta()"> Cadastra </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <section>
+            <div id="consulta" class="container">
+                <h3> Lista de pacientes cadastrados </h3>
+                <table class="table">
+                    <theader>
+                        <tr>
+                            <th> Nome </th> <th> Idade </th> <th> Altura </th> <th> Remove</th> <th> Atualiza </th>
+                        </tr>
+                    </theader>
+                    <tbody id="conteudoTabela">
+
+                    </tbody>
+                </table>
+
+            </div>
+        </section>
+        <footer class="container">
+            Desenvolvido por Bruno Benvenutti Castro na disciplina de POO do curso de ADS da Fatec Franca   
+        </footer>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>   
+    </body>
+</html>
